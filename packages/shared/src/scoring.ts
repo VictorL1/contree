@@ -113,12 +113,12 @@ export function calculateRoundScore(
         teamNorthSouthScore = (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
       }
     } else {
-      // Contrat normal réussi : chaque équipe marque ses points
+      // Contrat normal réussi : l'attaque marque la valeur du contrat (au point fait)
       if (contractTeam === Team.NorthSouth) {
-        teamNorthSouthScore = attackPoints * multiplier + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
+        teamNorthSouthScore = contractValue * multiplier + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
         teamEastWestScore = defensePoints * multiplier + (beloteTeam === Team.EastWest ? beloteBonus : 0);
       } else {
-        teamEastWestScore = attackPoints * multiplier + (beloteTeam === Team.EastWest ? beloteBonus : 0);
+        teamEastWestScore = contractValue * multiplier + (beloteTeam === Team.EastWest ? beloteBonus : 0);
         teamNorthSouthScore = defensePoints * multiplier + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
       }
     }

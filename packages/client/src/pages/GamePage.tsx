@@ -14,6 +14,7 @@ import { TrickArea } from '../components/TrickArea.tsx';
 import { BiddingPanel } from '../components/BiddingPanel.tsx';
 import { ScoreBoard } from '../components/ScoreBoard.tsx';
 import { PlayerLabel } from '../components/PlayerLabel.tsx';
+import { PointsHelper } from '../components/PointsHelper.tsx';
 
 interface PlayerInfo {
   position: Position;
@@ -228,7 +229,8 @@ export function GamePage() {
       <div className="absolute inset-8 rounded-3xl bg-[#145830] border-4 border-[#0f4d2a] shadow-2xl" />
 
       {/* Score */}
-      <div className="absolute top-2 right-2 z-20">
+      <div className="absolute top-2 right-2 z-20 flex items-start gap-1.5">
+        <PointsHelper />
         <ScoreBoard
           scores={scores}
           targetScore={1000}

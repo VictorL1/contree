@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
 export function LoginPage() {
   const { login } = useAuth();
+  const location = useLocation();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -72,7 +73,7 @@ export function LoginPage() {
 
         <p className="mt-6 text-center text-gray-400 text-sm">
           Pas de compte ?{' '}
-          <Link to="/register" className="text-[#2d8f54] hover:underline">Créer un compte</Link>
+          <Link to="/register" state={location.state} className="text-[#2d8f54] hover:underline">Créer un compte</Link>
         </p>
       </div>
     </div>

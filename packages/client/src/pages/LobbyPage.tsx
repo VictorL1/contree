@@ -77,6 +77,13 @@ export function LobbyPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleCopyLink() {
+    const link = `${window.location.origin}/lobby/${roomCode}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   const allPositions = [Position.South, Position.West, Position.North, Position.East];
 
   return (
@@ -86,10 +93,18 @@ export function LobbyPage() {
       {/* Code du salon */}
       <button
         onClick={handleCopyCode}
-        className="mb-8 px-6 py-2 rounded-lg bg-[#1a1a2e] border border-[#3a3a4e] text-white text-2xl tracking-[0.3em] font-mono hover:border-[#2d8f54] transition cursor-pointer"
+        className="mb-2 px-6 py-2 rounded-lg bg-[#1a1a2e] border border-[#3a3a4e] text-white text-2xl tracking-[0.3em] font-mono hover:border-[#2d8f54] transition cursor-pointer"
         title="Copier le code"
       >
         {roomCode} {copied ? '✓' : '📋'}
+      </button>
+
+      {/* Lien de partage */}
+      <button
+        onClick={handleCopyLink}
+        className="mb-8 px-4 py-1.5 rounded-lg bg-[#2a2a3e] hover:bg-[#3a3a4e] text-gray-300 text-sm transition cursor-pointer"
+      >
+        🔗 Copier le lien d'invitation
       </button>
 
       {error && (

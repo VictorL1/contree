@@ -146,10 +146,11 @@ describe('calculateRoundScore', () => {
     // E/O a gagné les plis 4,5,7 = 14+13+3 = 30
     // Total = 132 + 30 = 162 ✓
     // Le contrat de 80 est réussi (132 >= 80)
+    // Au point fait : l'attaque marque la valeur du contrat (80)
     expect(score.contractMet).toBe(true);
     expect(score.attackPoints).toBe(132);
     expect(score.defensePoints).toBe(30);
-    expect(score.teamNorthSouthScore).toBe(132);
+    expect(score.teamNorthSouthScore).toBe(80);
     expect(score.teamEastWestScore).toBe(30);
   });
 
