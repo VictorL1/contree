@@ -101,9 +101,8 @@ export function calculateRoundScore(
   }
 
   if (contractMet) {
-    // Contrat réussi
+    // Contrat réussi : seule l'attaque marque la valeur du contrat
     if (contract.value === 'capot' || contract.value === 'generale') {
-      // Capot/Générale réussi
       const bonusPoints = contractValue * multiplier;
       if (contractTeam === Team.NorthSouth) {
         teamNorthSouthScore = bonusPoints + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
@@ -113,27 +112,19 @@ export function calculateRoundScore(
         teamNorthSouthScore = (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
       }
     } else {
-      // Contrat normal réussi : l'attaque marque la valeur du contrat (au point fait)
+      // Contrat normal réussi : l'attaque marque la valeur du contrat, la défense 0
       if (contractTeam === Team.NorthSouth) {
         teamNorthSouthScore = contractValue * multiplier + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
-        teamEastWestScore = defensePoints * multiplier + (beloteTeam === Team.EastWest ? beloteBonus : 0);
+        teamEastWestScore = (beloteTeam === Team.EastWest ? beloteBonus : 0);
       } else {
         teamEastWestScore = contractValue * multiplier + (beloteTeam === Team.EastWest ? beloteBonus : 0);
-        teamNorthSouthScore = defensePoints * multiplier + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
+        teamNorthSouthScore = (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
       }
     }
   } else {
-    // Contrat chuté : la défense marque 162 + valeur du contrat
-    const defenseScore = (TOTAL_POINTS + contractValue) * multiplier;
-    if (contractTeam === Team.NorthSouth) {
-      // N/S a chuté → E/O marque tout
-      teamNorthSouthScore = (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
-      teamEastWestScore = defenseScore + (beloteTeam === Team.EastWest ? beloteBonus : 0);
-    } else {
-      // E/O a chuté → N/S marque tout
-      teamEastWestScore = (beloteTeam === Team.EastWest ? beloteBonus : 0);
-      teamNorthSouthScore = defenseScore + (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
-    }
+    // Contrat chuté : personne ne marque de points (sauf belote)
+    teamNorthSouthScore = (beloteTeam === Team.NorthSouth ? beloteBonus : 0);
+    teamEastWestScore = (beloteTeam === Team.EastWest ? beloteBonus : 0);
   }
 
   return {

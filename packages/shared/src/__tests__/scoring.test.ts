@@ -146,15 +146,15 @@ describe('calculateRoundScore', () => {
     // E/O a gagné les plis 4,5,7 = 14+13+3 = 30
     // Total = 132 + 30 = 162 ✓
     // Le contrat de 80 est réussi (132 >= 80)
-    // Au point fait : l'attaque marque la valeur du contrat (80)
+    // L'attaque marque la valeur du contrat (80), la défense 0
     expect(score.contractMet).toBe(true);
     expect(score.attackPoints).toBe(132);
     expect(score.defensePoints).toBe(30);
     expect(score.teamNorthSouthScore).toBe(80);
-    expect(score.teamEastWestScore).toBe(30);
+    expect(score.teamEastWestScore).toBe(0);
   });
 
-  it('contrat chuté : la défense marque 162 + valeur contrat', () => {
+  it('contrat chuté : personne ne marque', () => {
     const highContract: Bid = { player: Position.South, value: 150, suit: Suit.Hearts };
     const tricks: Trick[] = [];
 
@@ -220,9 +220,9 @@ describe('calculateRoundScore', () => {
 
     // Attack : 55 + 3 = 58 → contrat 150 chuté
     expect(score.contractMet).toBe(false);
-    // Defense marque 162 + 150 = 312
+    // Personne ne marque
     expect(score.teamNorthSouthScore).toBe(0);
-    expect(score.teamEastWestScore).toBe(312);
+    expect(score.teamEastWestScore).toBe(0);
   });
 
   it('belote toujours acquise même si contrat chuté', () => {
@@ -263,10 +263,11 @@ describe('calculateRoundScore', () => {
       ));
     }
 
-    // Contrat chuté + contré → (162 + 80) * 2 = 484
+    // Contrat chuté + contré → personne ne marque (sauf belote)
     const score = calculateRoundScore(tricks, trump, contract, Team.NorthSouth, null, true, false);
     expect(score.contractMet).toBe(false);
-    expect(score.teamEastWestScore).toBe((162 + 80) * 2);
+    expect(score.teamNorthSouthScore).toBe(0);
+    expect(score.teamEastWestScore).toBe(0);
   });
 
   it('surcontre quadruple les points', () => {
@@ -284,10 +285,11 @@ describe('calculateRoundScore', () => {
       ));
     }
 
-    // Contrat chuté + surcontré → (162 + 80) * 4 = 968
+    // Contrat chuté + surcontré → personne ne marque (sauf belote)
     const score = calculateRoundScore(tricks, trump, contract, Team.NorthSouth, null, false, true);
     expect(score.contractMet).toBe(false);
-    expect(score.teamEastWestScore).toBe((162 + 80) * 4);
+    expect(score.teamNorthSouthScore).toBe(0);
+    expect(score.teamEastWestScore).toBe(0);
   });
 });
 
