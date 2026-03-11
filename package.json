@@ -1,0 +1,16 @@
+{
+  "name": "contree",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace=packages/shared",
+    "test:shared": "npm run test --workspace=packages/shared",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:server": "npm run build:shared && cd packages/server && npx prisma generate && npm run build",
+    "build:client": "npm run build:shared && npm run build --workspace=packages/client",
+    "start:server": "cd packages/server && node dist/index.js"
+  }
+}

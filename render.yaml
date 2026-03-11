@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: contree-server
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build:shared && cd packages/server && npx prisma generate && npm run build
+    startCommand: cd packages/server && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: PORT
+        value: 10000

@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  username     String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  stats        UserStats?
+  gamePlayers  GamePlayer[]
+}
+
+model UserStats {
+  id          String @id @default(cuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id])
+  gamesPlayed Int    @default(0)
+  gamesWon    Int    @default(0)
+  totalPoints Int    @default(0)
+  highestBid  Int    @default(0)
+}
+
+model GameHistory {
+  id           String       @id @default(cuid())
+  createdAt    DateTime     @default(now())
+  endedAt      DateTime?
+  scoreTeam1   Int          @default(0)
+  scoreTeam2   Int          @default(0)
+  winningTeam  Int?
+  targetScore  Int          @default(1000)
+  players      GamePlayer[]
+}
+
+model GamePlayer {
+  id       String      @id @default(cuid())
+  gameId   String
+  game     GameHistory @relation(fields: [gameId], references: [id])
+  userId   String
+  user     User        @relation(fields: [userId], references: [id])
+  team     Int
+  position String
+
+  @@unique([gameId, userId])
+  @@unique([gameId, position])
+}
