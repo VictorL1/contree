@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { Position, Team, GamePhase, type ClientEvents, type ServerEvents, type Card } from '@contree/shared';
+import { Position, Team, GamePhase, type ClientEvents, type ServerEvents, type Card, getTeam, getCardPoints } from '@contree/shared';
 import { verifyAccessToken } from '../auth/service.js';
 import { gameManager } from '../game/manager.js';
 import { matchmakingQueue } from '../matchmaking/queue.js';
@@ -371,9 +371,31 @@ function broadcastGameEvents(
         io.to(roomCode).emit('card-played', { player: event.player, card: event.card });
         break;
 
-      case 'trick-won':
-        io.to(roomCode).emit('trick-won', { winner: event.winner, trick: event.trick });
+      case 'belote-announced':
+        io.to(roomCode).emit('belote-announced', { player: event.player });
         break;
+
+      case 'rebelote-announced':
+        io.to(roomCode).emit('rebelote-announced', { player: event.player });
+        break;
+
+      case 'trick-won': {
+        // Calculate running trick points per team
+        const trumpSuit = room.engine.state.trumpSuit!;
+        const trickPoints: { [Team.NorthSouth]: number; [Team.EastWest]: number } = {
+          [Team.NorthSouth]: 0,
+          [Team.EastWest]: 0,
+        };
+        for (const t of room.engine.state.tricks) {
+          if (t.winner) {
+            const winnerTeam = getTeam(t.winner);
+            const pts = t.cards.reduce((sum, pc) => sum + getCardPoints(pc.card, trumpSuit), 0);
+            trickPoints[winnerTeam] += pts;
+          }
+        }
+        io.to(roomCode).emit('trick-won', { winner: event.winner, trick: event.trick, trickPoints });
+        break;
+      }
 
       case 'round-scored':
         io.to(roomCode).emit('round-scored', event.score);

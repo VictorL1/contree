@@ -58,6 +58,7 @@ export function GamePage() {
   const [showLastTrick, setShowLastTrick] = useState(false);
   const [gameOver, setGameOver] = useState<{ winner: Team; scores: { [Team.NorthSouth]: number; [Team.EastWest]: number } } | null>(null);
   const [announcements, setAnnouncements] = useState<string[]>([]);
+  const [roundPoints, setRoundPoints] = useState<{ [Team.NorthSouth]: number; [Team.EastWest]: number } | null>(null);
 
   const addAnnouncement = useCallback((msg: string) => {
     setAnnouncements(prev => [...prev.slice(-4), msg]);
@@ -80,6 +81,7 @@ export function GamePage() {
       setPhase('bidding');
       setTrickWinner(null);
       setRoundResult(null);
+      setRoundPoints(null);
     });
 
     socket.on('bidding-update', (state) => {
@@ -111,15 +113,24 @@ export function GamePage() {
       ));
     });
 
-    socket.on('trick-won', ({ winner, trick }) => {
+    socket.on('trick-won', ({ winner, trick, trickPoints }) => {
       setTrickWinner({ winner, trick });
       setShowLastTrick(false);
+      if (trickPoints) setRoundPoints(trickPoints);
       addAnnouncement(`Pli remporté par ${getPlayerName(winner)}`);
       setTimeout(() => {
         setLastTrick(trick);
         setCurrentTrick([]);
         setTrickWinner(null);
       }, 1500);
+    });
+
+    socket.on('belote-announced', ({ player }) => {
+      addAnnouncement(`${getPlayerName(player)} : Belote !`);
+    });
+
+    socket.on('rebelote-announced', ({ player }) => {
+      addAnnouncement(`${getPlayerName(player)} : Rebelote !`);
     });
 
     socket.on('round-scored', (score) => {
@@ -160,6 +171,8 @@ export function GamePage() {
       socket.off('your-turn');
       socket.off('card-played');
       socket.off('trick-won');
+      socket.off('belote-announced');
+      socket.off('rebelote-announced');
       socket.off('round-scored');
       socket.off('game-over');
       socket.off('player-disconnected');
@@ -224,6 +237,7 @@ export function GamePage() {
           isContred={isContred}
           isSurcontred={isSurcontred}
           playerTeam={myTeam}
+          roundPoints={roundPoints}
         />
       </div>
 

@@ -44,7 +44,7 @@ export function Card({ card, playable = false, selected = false, faceDown = fals
       whileTap={playable ? { scale: 0.95 } : {}}
       animate={selected ? { y: -16, boxShadow: '0 0 12px rgba(45,143,84,0.6)' } : { y: 0 }}
       className={`${w} rounded-lg bg-[#fefefa] border shadow-md flex flex-col items-center justify-center relative transition
-        ${playable ? 'cursor-pointer hover:shadow-xl border-gray-300' : 'cursor-default border-gray-200 opacity-70'}
+        ${playable ? 'cursor-pointer hover:shadow-xl border-gray-300' : 'cursor-default border-gray-200'}
         ${selected ? 'border-[#2d8f54] border-2' : ''}
       `}
     >

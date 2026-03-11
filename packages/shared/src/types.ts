@@ -175,7 +175,9 @@ export interface ServerEvents {
   'contract-set': (data: { contract: Bid; team: Team; contred: boolean; surcontred: boolean }) => void;
   'your-turn': (data: { playableCards: Card[] }) => void;
   'card-played': (data: { player: Position; card: Card }) => void;
-  'trick-won': (data: { winner: Position; trick: Trick }) => void;
+  'belote-announced': (data: { player: Position }) => void;
+  'rebelote-announced': (data: { player: Position }) => void;
+  'trick-won': (data: { winner: Position; trick: Trick; trickPoints: { [Team.NorthSouth]: number; [Team.EastWest]: number } }) => void;
   'round-scored': (data: RoundScore) => void;
   'game-over': (data: { winner: Team; scores: { [Team.NorthSouth]: number; [Team.EastWest]: number } }) => void;
   'chat-message': (data: { username: string; message: string }) => void;
