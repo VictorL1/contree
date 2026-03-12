@@ -8,23 +8,65 @@ datasource db {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  username     String       @unique
-  passwordHash String
-  createdAt    DateTime     @default(now())
-  stats        UserStats?
-  gamePlayers  GamePlayer[]
+  id              String          @id @default(cuid())
+  email           String          @unique
+  username        String          @unique
+  passwordHash    String
+  createdAt       DateTime        @default(now())
+  stats           UserStats?
+  gamePlayers     GamePlayer[]
+  partnerStats    PartnerStats[]  @relation("PartnerStatsUser")
+  partnerStatsOf  PartnerStats[]  @relation("PartnerStatsPartner")
+  cosmetics       UserCosmetic[]
+  // Equipped cosmetics
+  equippedBorder  String          @default("default")
+  equippedTable   String          @default("default")
+  equippedCardBack String         @default("default")
 }
 
 model UserStats {
+  id            String @id @default(cuid())
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id])
+  gamesPlayed   Int    @default(0)
+  gamesWon      Int    @default(0)
+  totalPoints   Int    @default(0)
+  victoryPoints Int    @default(0)
+  highestBid    Int    @default(0)
+}
+
+model PartnerStats {
   id          String @id @default(cuid())
-  userId      String @unique
-  user        User   @relation(fields: [userId], references: [id])
+  userId      String
+  user        User   @relation("PartnerStatsUser", fields: [userId], references: [id])
+  partnerId   String
+  partner     User   @relation("PartnerStatsPartner", fields: [partnerId], references: [id])
   gamesPlayed Int    @default(0)
   gamesWon    Int    @default(0)
   totalPoints Int    @default(0)
-  highestBid  Int    @default(0)
+
+  @@unique([userId, partnerId])
+}
+
+model CosmeticItem {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  displayName String
+  category    String         // "border", "table", "cardBack"
+  cost        Int
+  preview     String         @default("")
+  users       UserCosmetic[]
+}
+
+model UserCosmetic {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  itemId     String
+  item       CosmeticItem @relation(fields: [itemId], references: [id])
+  purchasedAt DateTime    @default(now())
+
+  @@unique([userId, itemId])
 }
 
 model GameHistory {

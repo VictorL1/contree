@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Position, Team, GamePhase, Suit,
@@ -34,6 +34,7 @@ function getRelativePosition(pos: Position, myPos: Position): 'bottom' | 'left' 
 
 export function GamePage() {
   const { roomCode } = useParams<{ roomCode: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   // État du jeu
@@ -275,7 +276,7 @@ export function GamePage() {
 
       {/* Panneau d'enchères */}
       {phase === 'bidding' && biddingState && (
-        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-30">
+        <div className="absolute bottom-48 left-1/2 -translate-x-1/2 z-30">
           <BiddingPanel
             biddingState={biddingState}
             isMyTurn={isMyTurn}
@@ -366,6 +367,9 @@ export function GamePage() {
               <p className="text-gray-300 text-lg mb-2">
                 {gameOver.winner === myTeam ? 'Félicitations !' : 'Dommage, ce sera pour la prochaine !'}
               </p>
+              {gameOver.winner === myTeam && (
+                <p className="text-[#d4a843] text-sm mb-4 font-medium">+10 points de victoire gagnés !</p>
+              )}
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div className="bg-[#0a0a1a] rounded-xl p-4">
                   <div className="text-[#2d8f54] text-sm font-medium">Nous</div>
@@ -376,12 +380,12 @@ export function GamePage() {
                   <div className="text-white text-3xl font-bold">{gameOver.scores[myTeam === Team.NorthSouth ? Team.EastWest : Team.NorthSouth]}</div>
                 </div>
               </div>
-              <a
-                href="/"
-                className="inline-block px-8 py-3 rounded-xl bg-[#1a6b3c] hover:bg-[#2d8f54] text-white font-semibold transition"
+              <button
+                onClick={() => navigate('/')}
+                className="px-8 py-3 rounded-xl bg-[#1a6b3c] hover:bg-[#2d8f54] text-white font-semibold transition cursor-pointer"
               >
                 Retour à l'accueil
-              </a>
+              </button>
             </div>
           </motion.div>
         )}

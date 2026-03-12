@@ -78,4 +78,69 @@ export const api = {
   getMe() {
     return request<{ id: string; username: string; email: string }>('/auth/me');
   },
+
+  getLeaderboard() {
+    return request<LeaderboardEntry[]>('/stats/leaderboard');
+  },
+
+  getMyStats() {
+    return request<PlayerStats>('/stats/me');
+  },
+
+  getCosmetics() {
+    return request<CosmeticItem[]>('/stats/cosmetics');
+  },
+
+  buyCosmetic(itemId: string) {
+    return request<{ success: boolean; remainingPoints: number }>('/stats/cosmetics/buy', {
+      method: 'POST',
+      body: JSON.stringify({ itemId }),
+    });
+  },
+
+  equipCosmetic(itemName: string, category: string) {
+    return request<{ success: boolean }>('/stats/cosmetics/equip', {
+      method: 'POST',
+      body: JSON.stringify({ itemName, category }),
+    });
+  },
 };
+
+export interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  victoryPoints: number;
+  gamesPlayed: number;
+  gamesWon: number;
+  winRate: number;
+}
+
+export interface PlayerStats {
+  stats: {
+    gamesPlayed: number;
+    gamesWon: number;
+    totalPoints: number;
+    victoryPoints: number;
+    highestBid: number;
+  } | null;
+  partners: {
+    partnerName: string;
+    gamesPlayed: number;
+    gamesWon: number;
+    totalPoints: number;
+  }[];
+  equipped: {
+    border: string;
+    table: string;
+    cardBack: string;
+  };
+}
+
+export interface CosmeticItem {
+  id: string;
+  name: string;
+  displayName: string;
+  category: string;
+  cost: number;
+  preview: string;
+}

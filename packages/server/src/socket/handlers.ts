@@ -1,8 +1,9 @@
 import { Server, Socket } from 'socket.io';
-import { Position, Team, GamePhase, type ClientEvents, type ServerEvents, type Card, getTeam, getCardPoints } from '@contree/shared';
+import { Position, Team, GamePhase, type ClientEvents, type ServerEvents, type Card, getTeam, getCardPoints, getPartner } from '@contree/shared';
 import { verifyAccessToken } from '../auth/service.js';
 import { gameManager } from '../game/manager.js';
 import { matchmakingQueue } from '../matchmaking/queue.js';
+import { prisma } from '../db/prisma.js';
 import type { GameEvent } from '../game/engine.js';
 
 interface AuthenticatedSocket extends Socket<ClientEvents, ServerEvents> {
@@ -410,7 +411,88 @@ function broadcastGameEvents(
 
       case 'game-over':
         io.to(roomCode).emit('game-over', { winner: event.winner, scores: event.scores });
+        // Save game result and award victory points
+        saveGameResult(room, event.winner, event.scores).catch(err => console.error('Save game result error:', err));
         break;
+    }
+  }
+}
+
+const VICTORY_POINTS_WIN = 10;
+
+/** Save game result to DB and award victory points to winners */
+async function saveGameResult(
+  room: ReturnType<typeof gameManager.getRoom>,
+  winner: Team,
+  scores: { [Team.NorthSouth]: number; [Team.EastWest]: number },
+): Promise<void> {
+  if (!room) return;
+
+  const players = Array.from(room.engine.state.players.entries());
+  const winningTeamNum = winner === Team.NorthSouth ? 1 : 2;
+
+  // Create game history
+  const game = await prisma.gameHistory.create({
+    data: {
+      endedAt: new Date(),
+      scoreTeam1: scores[Team.NorthSouth],
+      scoreTeam2: scores[Team.EastWest],
+      winningTeam: winningTeamNum,
+      targetScore: room.targetScore,
+      players: {
+        create: players.map(([pos, player]) => ({
+          userId: player.userId,
+          team: getTeam(pos) === Team.NorthSouth ? 1 : 2,
+          position: pos,
+        })),
+      },
+    },
+  });
+
+  // Update stats for each player
+  for (const [pos, player] of players) {
+    const team = getTeam(pos);
+    const isWinner = team === winner;
+    const teamScore = team === Team.NorthSouth ? scores[Team.NorthSouth] : scores[Team.EastWest];
+
+    await prisma.userStats.upsert({
+      where: { userId: player.userId },
+      create: {
+        userId: player.userId,
+        gamesPlayed: 1,
+        gamesWon: isWinner ? 1 : 0,
+        totalPoints: teamScore,
+        victoryPoints: isWinner ? VICTORY_POINTS_WIN : 0,
+      },
+      update: {
+        gamesPlayed: { increment: 1 },
+        gamesWon: { increment: isWinner ? 1 : 0 },
+        totalPoints: { increment: teamScore },
+        victoryPoints: { increment: isWinner ? VICTORY_POINTS_WIN : 0 },
+      },
+    });
+
+    // Update partner stats
+    const partnerPos = getPartner(pos);
+    const partnerData = room.engine.state.players.get(partnerPos);
+    if (partnerData) {
+      await prisma.partnerStats.upsert({
+        where: {
+          userId_partnerId: { userId: player.userId, partnerId: partnerData.userId },
+        },
+        create: {
+          userId: player.userId,
+          partnerId: partnerData.userId,
+          gamesPlayed: 1,
+          gamesWon: isWinner ? 1 : 0,
+          totalPoints: teamScore,
+        },
+        update: {
+          gamesPlayed: { increment: 1 },
+          gamesWon: { increment: isWinner ? 1 : 0 },
+          totalPoints: { increment: teamScore },
+        },
+      });
     }
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Suit } from '@contree/shared';
+import { Suit, Rank } from '@contree/shared';
 
 const SUIT_SYMBOLS: Record<Suit, string> = {
   [Suit.Spades]: '♠', [Suit.Hearts]: '♥', [Suit.Diamonds]: '♦', [Suit.Clubs]: '♣',
@@ -20,16 +20,44 @@ const NON_TRUMP_SUITS_FOR: Record<Suit, Suit[]> = {
   [Suit.Clubs]: [Suit.Spades, Suit.Hearts, Suit.Diamonds],
 };
 
-const TRUMP_ROWS: [string, number][] = [
-  ['V', 20], ['9', 14], ['As', 11], ['10', 10], ['R', 4], ['D', 3], ['8', 0], ['7', 0],
+const TRUMP_CARDS: { rank: Rank; points: number }[] = [
+  { rank: Rank.Jack, points: 20 },
+  { rank: Rank.Nine, points: 14 },
+  { rank: Rank.Ace, points: 11 },
+  { rank: Rank.Ten, points: 10 },
+  { rank: Rank.King, points: 4 },
+  { rank: Rank.Queen, points: 3 },
+  { rank: Rank.Eight, points: 0 },
+  { rank: Rank.Seven, points: 0 },
 ];
 
-const NON_TRUMP_ROWS: [string, number][] = [
-  ['As', 11], ['10', 10], ['R', 4], ['D', 3], ['V', 2], ['9', 0], ['8', 0], ['7', 0],
+const NON_TRUMP_CARDS: { rank: Rank; points: number }[] = [
+  { rank: Rank.Ace, points: 11 },
+  { rank: Rank.Ten, points: 10 },
+  { rank: Rank.King, points: 4 },
+  { rank: Rank.Queen, points: 3 },
+  { rank: Rank.Jack, points: 2 },
+  { rank: Rank.Nine, points: 0 },
+  { rank: Rank.Eight, points: 0 },
+  { rank: Rank.Seven, points: 0 },
 ];
 
 interface PointsHelperProps {
   trumpSuit?: Suit | null;
+}
+
+function MiniCard({ rank, suit, points }: { rank: Rank; suit: Suit; points: number }) {
+  const isRed = suit === Suit.Hearts || suit === Suit.Diamonds;
+  const color = isRed ? 'text-red-600' : 'text-gray-900';
+  return (
+    <div className="flex flex-col items-center">
+      <div className="w-8 h-11 rounded bg-[#fefefa] shadow-md flex flex-col items-center justify-center relative border border-gray-200/50">
+        <span className={`text-[8px] font-bold absolute top-0 left-0.5 ${color}`}>{rank}</span>
+        <span className={`text-sm ${color}`}>{SUIT_SYMBOLS[suit]}</span>
+      </div>
+      <span className={`text-[10px] font-bold mt-0.5 ${points > 0 ? 'text-yellow-300' : 'text-gray-500/60'}`}>{points}</span>
+    </div>
+  );
 }
 
 export function PointsHelper({ trumpSuit }: PointsHelperProps) {
@@ -54,54 +82,64 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
 
       <AnimatePresence>
         {open && (
-          <motion.div
-            key="points-overlay"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-10 right-0 z-30 bg-[#0d0d1a]/95 backdrop-blur-sm rounded-lg border border-[#2a2a3e] shadow-xl p-2 w-[200px] sm:w-[220px]"
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {/* Trump column */}
-              <div>
-                <div className={`font-bold text-xs text-center mb-1 ${SUIT_COLORS[trump]}`}>
-                  {SUIT_SYMBOLS[trump]} Atout
+          <>
+            <motion.div
+              key="helper-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-35"
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              key="points-overlay"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-black/25 backdrop-blur-sm rounded-2xl p-4 sm:p-5"
+            >
+              {/* Trump row */}
+              <div className="mb-3">
+                <div className={`text-xs font-bold text-center mb-1.5 ${SUIT_COLORS[trump]}`}>
+                  Atout {SUIT_SYMBOLS[trump]}
                 </div>
-                {TRUMP_ROWS.map(([name, pts]) => (
-                  <div key={name} className="flex justify-between text-[11px] leading-4 px-1">
-                    <span className="text-gray-400">{name}</span>
-                    <span className={`font-bold ${pts > 0 ? 'text-white' : 'text-gray-600'}`}>{pts}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between text-[11px] leading-4 px-1 mt-0.5 border-t border-[#2a2a3e] pt-0.5">
-                  <span className="text-gray-500 font-medium">Tot.</span>
+                <div className="flex gap-1.5 justify-center">
+                  {TRUMP_CARDS.map(({ rank, points }) => (
+                    <MiniCard key={rank} rank={rank} suit={trump} points={points} />
+                  ))}
+                </div>
+                <div className="text-[10px] text-center mt-1">
+                  <span className="text-gray-400">Total : </span>
                   <span className={`font-bold ${SUIT_COLORS[trump]}`}>62</span>
                 </div>
               </div>
 
-              {/* Non-trump column */}
+              <div className="h-px bg-white/10 my-2" />
+
+              {/* Non-trump row */}
               <div>
-                <div className="font-bold text-xs text-center mb-1 text-gray-400">
+                <div className="text-xs font-bold text-center mb-1.5 text-gray-300">
+                  Non-atout{' '}
                   {nonTrumpSuits.map(s => (
                     <span key={s} className={SUIT_COLORS[s]}>{SUIT_SYMBOLS[s]}</span>
                   ))}
                 </div>
-                {NON_TRUMP_ROWS.map(([name, pts]) => (
-                  <div key={name} className="flex justify-between text-[11px] leading-4 px-1">
-                    <span className="text-gray-400">{name}</span>
-                    <span className={`font-bold ${pts > 0 ? 'text-white' : 'text-gray-600'}`}>{pts}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between text-[11px] leading-4 px-1 mt-0.5 border-t border-[#2a2a3e] pt-0.5">
-                  <span className="text-gray-500 font-medium">Tot.</span>
-                  <span className="font-bold text-gray-400">30</span>
+                <div className="flex gap-1.5 justify-center">
+                  {NON_TRUMP_CARDS.map(({ rank, points }) => (
+                    <MiniCard key={rank} rank={rank} suit={nonTrumpSuits[0]} points={points} />
+                  ))}
+                </div>
+                <div className="text-[10px] text-center mt-1">
+                  <span className="text-gray-400">Total : </span>
+                  <span className="font-bold text-gray-300">30</span>
                 </div>
               </div>
-            </div>
-            <div className="text-[10px] text-gray-600 text-center mt-1">
-              152 + 10 (der) = 162
-            </div>
-          </motion.div>
+
+              <div className="text-[10px] text-gray-500 text-center mt-2">
+                152 + 10 (der) = 162
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket.ts';
 
@@ -90,6 +90,21 @@ export function HomePage() {
             Rejoindre
           </button>
         </div>
+
+        {/* Classement */}
+        <Link
+          to="/leaderboard"
+          className="block w-full py-3 rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a3e] text-gray-300 text-center font-medium border border-[#2a2a3e] transition"
+        >
+          🏆 Classement & Stats
+        </Link>
+
+        <Link
+          to="/shop"
+          className="block w-full py-3 rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a3e] text-gray-300 text-center font-medium border border-[#2a2a3e] transition"
+        >
+          🛒 Boutique
+        </Link>
       </div>
     </div>
   );

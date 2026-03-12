@@ -4,6 +4,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { authRouter } from './auth/routes.js';
+import { statsRouter } from './stats/routes.js';
 import { setupSocketHandlers } from './socket/handlers.js';
 import type { ClientEvents, ServerEvents } from '@contree/shared';
 
@@ -27,6 +28,9 @@ app.get('/health', (_req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRouter);
+
+// Stats routes
+app.use('/api/stats', statsRouter);
 
 // Socket.IO handlers
 setupSocketHandlers(io);
