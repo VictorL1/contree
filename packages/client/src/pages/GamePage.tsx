@@ -230,7 +230,7 @@ export function GamePage() {
 
       {/* Score */}
       <div className="absolute top-2 right-2 z-20 flex items-start gap-1.5">
-        <PointsHelper />
+        <PointsHelper trumpSuit={contract?.suit ?? null} />
         <ScoreBoard
           scores={scores}
           targetScore={1000}

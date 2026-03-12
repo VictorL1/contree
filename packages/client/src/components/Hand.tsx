@@ -6,18 +6,11 @@ import { Card } from './Card.tsx';
 const BLACK_SUITS = [Suit.Spades, Suit.Clubs];
 const RED_SUITS = [Suit.Hearts, Suit.Diamonds];
 
-/** Build a suit order that alternates black/red based on suits actually present */
-function buildSuitOrder(cards: CardType[]): Suit[] {
-  const present = new Set(cards.map(c => c.suit));
-  const blacks = BLACK_SUITS.filter(s => present.has(s));
-  const reds = RED_SUITS.filter(s => present.has(s));
-  const result: Suit[] = [];
-  const maxLen = Math.max(blacks.length, reds.length);
-  for (let i = 0; i < maxLen; i++) {
-    if (i < blacks.length) result.push(blacks[i]);
-    if (i < reds.length) result.push(reds[i]);
-  }
-  return result;
+/** Build a suit order that always alternates black/red, using all 4 suits */
+function buildSuitOrder(_cards: CardType[]): Suit[] {
+  // Always alternate: black, red, black, red
+  // Spades(black), Hearts(red), Clubs(black), Diamonds(red)
+  return [Suit.Spades, Suit.Hearts, Suit.Clubs, Suit.Diamonds];
 }
 
 const NON_TRUMP_RANK_ORDER: Rank[] = [
@@ -66,7 +59,7 @@ export function Hand({ cards, playableCards, onPlayCard, trumpSuit }: HandProps)
               rotate: (i - (sortedCards.length - 1) / 2) * 3,
               x: 0,
             }}
-            exit={{ y: 50, opacity: 0 }}
+            exit={{ y: -200, opacity: 0, scale: 0.8, transition: { duration: 0.3 } }}
             transition={{ delay: i * 0.05 }}
             style={{ marginLeft: i === 0 ? 0 : overlap, zIndex: i }}
           >
