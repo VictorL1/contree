@@ -46,9 +46,23 @@ interface PointsHelperProps {
   trumpSuit?: Suit | null;
 }
 
-function MiniCard({ rank, suit, points }: { rank: Rank; suit: Suit; points: number }) {
+function MiniCard({ rank, suit, points, horizontal = false }: { rank: Rank; suit: Suit; points: number; horizontal?: boolean }) {
   const isRed = suit === Suit.Hearts || suit === Suit.Diamonds;
   const color = isRed ? 'text-red-600' : 'text-gray-900';
+
+  if (horizontal) {
+    // Mobile: card + points side by side, compact row
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-7 h-10 rounded bg-[#fefefa] shadow flex flex-col items-center justify-center relative border border-gray-200/50 shrink-0">
+          <span className={`text-[7px] font-bold absolute top-0 left-0.5 ${color}`}>{rank}</span>
+          <span className={`text-xs ${color}`}>{SUIT_SYMBOLS[suit]}</span>
+        </div>
+        <span className={`text-[10px] font-bold ${points > 0 ? 'text-yellow-300' : 'text-gray-500/60'}`}>{points}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center">
       <div className="w-8 h-11 rounded bg-[#fefefa] shadow-md flex flex-col items-center justify-center relative border border-gray-200/50">
@@ -82,15 +96,15 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
 
       <AnimatePresence>
         {open && (
-          <motion.div
-            key="points-overlay"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="fixed top-2 left-2 z-20 bg-black/40 backdrop-blur-sm rounded-xl p-2 sm:p-2.5 pointer-events-auto"
-          >
-            {/* Trump row — compact */}
-            <div className="mb-1.5">
+          <>
+            {/* ===== PC: bottom-left (trump) + bottom-right (non-trump) ===== */}
+            <motion.div
+              key="pc-trump"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="hidden sm:block fixed bottom-16 left-16 z-20 pointer-events-none"
+            >
               <div className={`text-[10px] font-bold text-center mb-1 ${SUIT_COLORS[trump]}`}>
                 Atout {SUIT_SYMBOLS[trump]}
               </div>
@@ -99,12 +113,14 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
                   <MiniCard key={rank} rank={rank} suit={trump} points={points} />
                 ))}
               </div>
-            </div>
-
-            <div className="h-px bg-white/10 my-1" />
-
-            {/* Non-trump row — compact */}
-            <div>
+            </motion.div>
+            <motion.div
+              key="pc-nontrump"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="hidden sm:block fixed bottom-16 right-16 z-20 pointer-events-none"
+            >
               <div className="text-[10px] font-bold text-center mb-1 text-gray-300">
                 {nonTrumpSuits.map(s => (
                   <span key={s} className={SUIT_COLORS[s]}>{SUIT_SYMBOLS[s]}</span>
@@ -115,8 +131,40 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
                   <MiniCard key={rank} rank={rank} suit={nonTrumpSuits[0]} points={points} />
                 ))}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+
+            {/* ===== Mobile: left column (trump) + right column (non-trump) ===== */}
+            <motion.div
+              key="mob-trump"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="sm:hidden fixed left-1 top-1/2 -translate-y-1/2 z-20 flex flex-col items-start gap-0.5 pointer-events-none"
+            >
+              <div className={`text-[9px] font-bold mb-0.5 ${SUIT_COLORS[trump]}`}>
+                {SUIT_SYMBOLS[trump]}
+              </div>
+              {TRUMP_CARDS.map(({ rank, points }) => (
+                <MiniCard key={rank} rank={rank} suit={trump} points={points} horizontal />
+              ))}
+            </motion.div>
+            <motion.div
+              key="mob-nontrump"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="sm:hidden fixed right-1 top-1/2 -translate-y-1/2 z-20 flex flex-col items-end gap-0.5 pointer-events-none"
+            >
+              <div className="text-[9px] font-bold mb-0.5 text-gray-300">
+                {nonTrumpSuits.map(s => (
+                  <span key={s} className={SUIT_COLORS[s]}>{SUIT_SYMBOLS[s]}</span>
+                ))}
+              </div>
+              {NON_TRUMP_CARDS.map(({ rank, points }) => (
+                <MiniCard key={rank} rank={rank} suit={nonTrumpSuits[0]} points={points} horizontal />
+              ))}
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
