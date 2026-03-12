@@ -82,64 +82,41 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
 
       <AnimatePresence>
         {open && (
-          <>
-            <motion.div
-              key="helper-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-35"
-              onClick={() => setOpen(false)}
-            />
-            <motion.div
-              key="points-overlay"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-black/25 backdrop-blur-sm rounded-2xl p-4 sm:p-5"
-            >
-              {/* Trump row */}
-              <div className="mb-3">
-                <div className={`text-xs font-bold text-center mb-1.5 ${SUIT_COLORS[trump]}`}>
-                  Atout {SUIT_SYMBOLS[trump]}
-                </div>
-                <div className="flex gap-1.5 justify-center">
-                  {TRUMP_CARDS.map(({ rank, points }) => (
-                    <MiniCard key={rank} rank={rank} suit={trump} points={points} />
-                  ))}
-                </div>
-                <div className="text-[10px] text-center mt-1">
-                  <span className="text-gray-400">Total : </span>
-                  <span className={`font-bold ${SUIT_COLORS[trump]}`}>62</span>
-                </div>
+          <motion.div
+            key="points-overlay"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="fixed top-2 left-2 z-20 bg-black/40 backdrop-blur-sm rounded-xl p-2 sm:p-2.5 pointer-events-auto"
+          >
+            {/* Trump row — compact */}
+            <div className="mb-1.5">
+              <div className={`text-[10px] font-bold text-center mb-1 ${SUIT_COLORS[trump]}`}>
+                Atout {SUIT_SYMBOLS[trump]}
               </div>
-
-              <div className="h-px bg-white/10 my-2" />
-
-              {/* Non-trump row */}
-              <div>
-                <div className="text-xs font-bold text-center mb-1.5 text-gray-300">
-                  Non-atout{' '}
-                  {nonTrumpSuits.map(s => (
-                    <span key={s} className={SUIT_COLORS[s]}>{SUIT_SYMBOLS[s]}</span>
-                  ))}
-                </div>
-                <div className="flex gap-1.5 justify-center">
-                  {NON_TRUMP_CARDS.map(({ rank, points }) => (
-                    <MiniCard key={rank} rank={rank} suit={nonTrumpSuits[0]} points={points} />
-                  ))}
-                </div>
-                <div className="text-[10px] text-center mt-1">
-                  <span className="text-gray-400">Total : </span>
-                  <span className="font-bold text-gray-300">30</span>
-                </div>
+              <div className="flex gap-1 justify-center">
+                {TRUMP_CARDS.map(({ rank, points }) => (
+                  <MiniCard key={rank} rank={rank} suit={trump} points={points} />
+                ))}
               </div>
+            </div>
 
-              <div className="text-[10px] text-gray-500 text-center mt-2">
-                152 + 10 (der) = 162
+            <div className="h-px bg-white/10 my-1" />
+
+            {/* Non-trump row — compact */}
+            <div>
+              <div className="text-[10px] font-bold text-center mb-1 text-gray-300">
+                {nonTrumpSuits.map(s => (
+                  <span key={s} className={SUIT_COLORS[s]}>{SUIT_SYMBOLS[s]}</span>
+                ))}
               </div>
-            </motion.div>
-          </>
+              <div className="flex gap-1 justify-center">
+                {NON_TRUMP_CARDS.map(({ rank, points }) => (
+                  <MiniCard key={rank} rank={rank} suit={nonTrumpSuits[0]} points={points} />
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
