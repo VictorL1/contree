@@ -175,12 +175,12 @@ export function LobbyPage() {
                 }`}>
                   <div className="text-xs text-gray-400 mb-0.5">{POSITION_LABELS[pos]}</div>
                   {player ? player.username : 'En attente...'}
-                  {!player && (
+                  {myPosition !== pos && (
                     <button
                       onClick={() => handleSelectSeat(pos)}
                       className="mt-1 w-full text-[10px] px-2 py-0.5 rounded bg-[#2a2a3e] hover:bg-[#3a3a4e] text-gray-200 cursor-pointer"
                     >
-                      Prendre ce siege
+                      {player ? 'Echanger de place' : 'Prendre ce siege'}
                     </button>
                   )}
                   {myPosition === pos && (

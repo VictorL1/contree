@@ -96,10 +96,31 @@ class GameManager {
     const currentPosition = room.playerSockets.get(socketId);
     if (!currentPosition) return false;
     if (currentPosition === newPosition) return true;
-    if (room.positionToSocket.has(newPosition)) return false;
 
     const player = room.engine.state.players.get(currentPosition);
     if (!player) return false;
+
+    const otherSocketId = room.positionToSocket.get(newPosition);
+    const otherPlayer = room.engine.state.players.get(newPosition);
+
+    if (otherSocketId && otherPlayer) {
+      // Swap both players so a full lobby can still reorganize teams.
+      room.playerSockets.set(socketId, newPosition);
+      room.playerSockets.set(otherSocketId, currentPosition);
+
+      room.positionToSocket.set(newPosition, socketId);
+      room.positionToSocket.set(currentPosition, otherSocketId);
+
+      room.engine.state.players.delete(currentPosition);
+      room.engine.state.players.delete(newPosition);
+
+      player.position = newPosition;
+      otherPlayer.position = currentPosition;
+
+      room.engine.state.players.set(newPosition, player);
+      room.engine.state.players.set(currentPosition, otherPlayer);
+      return true;
+    }
 
     room.playerSockets.set(socketId, newPosition);
     room.positionToSocket.delete(currentPosition);
