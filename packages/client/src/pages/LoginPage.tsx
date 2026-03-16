@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { API_URL } from '../services/api.ts';
 
 export function LoginPage() {
   const { login, loginAsGuest } = useAuth();
@@ -9,8 +10,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

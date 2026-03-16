@@ -5,6 +5,7 @@ type TypedSocket = Socket<ServerEvents, ClientEvents>;
 
 let socket: TypedSocket | null = null;
 let socketToken: string | null = null;
+const DEFAULT_SOCKET_URL = 'https://contree-server.onrender.com';
 
 export function getSocket(): TypedSocket {
   const token = sessionStorage.getItem('accessToken');
@@ -17,7 +18,7 @@ export function getSocket(): TypedSocket {
 
   if (!socket) {
     socketToken = token;
-    const serverUrl = import.meta.env.VITE_SERVER_URL || undefined;
+    const serverUrl = import.meta.env.VITE_SERVER_URL || DEFAULT_SOCKET_URL;
     socket = io(serverUrl, {
       auth: { token },
       autoConnect: false,

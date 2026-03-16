@@ -1,4 +1,16 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const DEFAULT_BACKEND_URL = 'https://contree-server.onrender.com/api';
+export const API_URL = import.meta.env.VITE_API_URL || DEFAULT_BACKEND_URL;
+
+async function readJsonSafe(res: Response): Promise<any> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    throw new Error(
+      `Réponse non JSON du serveur API (${res.status}). Vérifie VITE_API_URL. Début: ${text.slice(0, 60)}`
+    );
+  }
+  return res.json();
+}
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = sessionStorage.getItem('accessToken');
@@ -9,7 +21,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-  const data = await res.json();
+  const data = await readJsonSafe(res);
 
   if (!res.ok) {
     // Tenter un refresh si 401
@@ -18,7 +30,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       if (refreshed) {
         headers['Authorization'] = `Bearer ${sessionStorage.getItem('accessToken')}`;
         const retry = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-        const retryData = await retry.json();
+        const retryData = await readJsonSafe(retry);
         if (retry.ok) return retryData;
       }
     }
@@ -45,7 +57,7 @@ async function refreshTokens(): Promise<boolean> {
       return false;
     }
 
-    const data = await res.json();
+    const data = await readJsonSafe(res);
     sessionStorage.setItem('accessToken', data.accessToken);
     sessionStorage.setItem('refreshToken', data.refreshToken);
     return true;
