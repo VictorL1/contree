@@ -14,6 +14,13 @@ interface AuthenticatedSocket extends Socket<ClientEvents, ServerEvents> {
   };
 }
 
+interface PendingSeatSwap {
+  requesterSocketId: string;
+  requesterPosition: Position;
+  targetSocketId: string;
+  targetPosition: Position;
+}
+
 const GUEST_EMAIL_DOMAIN = '@guest.scontree.local';
 
 function isGuestEmail(email: string): boolean {
@@ -21,6 +28,23 @@ function isGuestEmail(email: string): boolean {
 }
 
 export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): void {
+  const pendingSeatSwaps = new Map<string, PendingSeatSwap>();
+
+  function seatSwapKey(roomCode: string, targetPosition: Position): string {
+    return `${roomCode}:${targetPosition}`;
+  }
+
+  function broadcastRoomJoined(room: NonNullable<ReturnType<typeof gameManager.getRoom>>): void {
+    const players = Array.from(room.engine.state.players.entries()).map(([pos, p]) => ({
+      position: pos,
+      username: p.username,
+    }));
+
+    for (const [socketId, playerPos] of room.playerSockets.entries()) {
+      io.to(socketId).emit('room-joined', { players, yourPosition: playerPos });
+    }
+  }
+
   // Middleware d'authentification
   io.use((socket, next) => {
     const token = socket.handshake.auth.token as string;
@@ -137,14 +161,98 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
         return;
       }
 
-      const players = Array.from(room.engine.state.players.entries()).map(([pos, p]) => ({
-        position: pos,
-        username: p.username,
-      }));
+      broadcastRoomJoined(room);
+    });
 
-      for (const [socketId, playerPos] of room.playerSockets.entries()) {
-        io.to(socketId).emit('room-joined', { players, yourPosition: playerPos });
+    // ---- Demande d'echange de siege ----
+    socket.on('request-seat-swap', ({ targetPosition }) => {
+      const room = gameManager.getRoomBySocketId(socket.id);
+      if (!room) return;
+      if (room.engine.state.phase !== GamePhase.Waiting) {
+        socket.emit('error', { message: 'Impossible de changer de siège une fois la partie lancée' });
+        return;
       }
+
+      const requesterPosition = room.playerSockets.get(socket.id);
+      if (!requesterPosition) return;
+      if (requesterPosition === targetPosition) return;
+
+      const targetSocketId = room.positionToSocket.get(targetPosition);
+      if (!targetSocketId) {
+        // Si finalement libre, on déplace directement.
+        const moved = gameManager.movePlayerToPosition(room, socket.id, targetPosition);
+        if (!moved) {
+          socket.emit('error', { message: 'Siège indisponible' });
+          return;
+        }
+        broadcastRoomJoined(room);
+        return;
+      }
+
+      const key = seatSwapKey(room.code, targetPosition);
+      pendingSeatSwaps.set(key, {
+        requesterSocketId: socket.id,
+        requesterPosition,
+        targetSocketId,
+        targetPosition,
+      });
+
+      io.to(targetSocketId).emit('seat-swap-request', {
+        fromPosition: requesterPosition,
+        fromUsername: socket.data.username,
+      });
+    });
+
+    socket.on('respond-seat-swap', ({ requesterPosition, accepted }) => {
+      const room = gameManager.getRoomBySocketId(socket.id);
+      if (!room) return;
+
+      const targetPosition = room.playerSockets.get(socket.id);
+      if (!targetPosition) return;
+
+      const key = seatSwapKey(room.code, targetPosition);
+      const pending = pendingSeatSwaps.get(key);
+      if (!pending) return;
+
+      if (pending.requesterPosition !== requesterPosition || pending.targetSocketId !== socket.id) {
+        pendingSeatSwaps.delete(key);
+        return;
+      }
+
+      pendingSeatSwaps.delete(key);
+
+      if (!accepted) {
+        io.to(pending.requesterSocketId).emit('seat-swap-result', {
+          accepted: false,
+          requesterPosition,
+          targetPosition,
+          reason: 'Demande refusée',
+        });
+        return;
+      }
+
+      const moved = gameManager.movePlayerToPosition(room, pending.requesterSocketId, targetPosition);
+      if (!moved) {
+        io.to(pending.requesterSocketId).emit('seat-swap-result', {
+          accepted: false,
+          requesterPosition,
+          targetPosition,
+          reason: 'Échange impossible',
+        });
+        return;
+      }
+
+      broadcastRoomJoined(room);
+      io.to(pending.requesterSocketId).emit('seat-swap-result', {
+        accepted: true,
+        requesterPosition,
+        targetPosition,
+      });
+      io.to(socket.id).emit('seat-swap-result', {
+        accepted: true,
+        requesterPosition,
+        targetPosition,
+      });
     });
 
     // ---- Joueur prêt → démarrer si 4 joueurs ----

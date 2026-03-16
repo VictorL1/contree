@@ -9,6 +9,11 @@ interface PlayerInfo {
   username: string;
 }
 
+interface IncomingSwapRequest {
+  fromPosition: Position;
+  fromUsername: string;
+}
+
 const POSITION_LABELS: Record<Position, string> = {
   [Position.South]: 'Sud',
   [Position.West]: 'Ouest',
@@ -31,6 +36,7 @@ export function LobbyPage() {
   const [copied, setCopied] = useState(false);
   const [myPosition, setMyPosition] = useState<Position | null>(null);
   const [showQr, setShowQr] = useState(false);
+  const [incomingSwapRequest, setIncomingSwapRequest] = useState<IncomingSwapRequest | null>(null);
 
   useEffect(() => {
     const socket = connectSocket();
@@ -59,12 +65,23 @@ export function LobbyPage() {
       setError(message);
     });
 
+    socket.on('seat-swap-request', ({ fromPosition, fromUsername }) => {
+      setIncomingSwapRequest({ fromPosition, fromUsername });
+    });
+
+    socket.on('seat-swap-result', ({ accepted, reason }) => {
+      setError(accepted ? 'Echange de place accepté' : (reason || 'Echange refusé'));
+      setTimeout(() => setError(''), 2500);
+    });
+
     return () => {
       socket.off('room-joined');
       socket.off('player-joined');
       socket.off('player-left');
       socket.off('game-started');
       socket.off('error');
+      socket.off('seat-swap-request');
+      socket.off('seat-swap-result');
     };
   }, [roomCode, navigate]);
 
@@ -73,7 +90,23 @@ export function LobbyPage() {
   }
 
   function handleSelectSeat(position: Position) {
+    const targetPlayer = players.find(p => p.position === position);
+    if (targetPlayer) {
+      getSocket().emit('request-seat-swap', { targetPosition: position });
+      setError(`Demande d'echange envoyee a ${targetPlayer.username}`);
+      setTimeout(() => setError(''), 2500);
+      return;
+    }
     getSocket().emit('select-seat', { position });
+  }
+
+  function handleSwapResponse(accepted: boolean) {
+    if (!incomingSwapRequest) return;
+    getSocket().emit('respond-seat-swap', {
+      requesterPosition: incomingSwapRequest.fromPosition,
+      accepted,
+    });
+    setIncomingSwapRequest(null);
   }
 
   function handleCopyCode() {
@@ -141,6 +174,38 @@ export function LobbyPage() {
               >
                 Fermer
               </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {incomingSwapRequest && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <div className="bg-[#1a1a2e] border border-[#3a3a4e] rounded-2xl p-5 w-full max-w-sm text-center">
+              <h3 className="text-white text-lg font-semibold mb-2">Demande d'echange</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                {incomingSwapRequest.fromUsername} veut prendre votre place. Accepter ?
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => handleSwapResponse(false)}
+                  className="px-4 py-2 rounded-lg bg-[#2a2a3e] hover:bg-[#3a3a4e] text-white text-sm cursor-pointer"
+                >
+                  Refuser
+                </button>
+                <button
+                  onClick={() => handleSwapResponse(true)}
+                  className="px-4 py-2 rounded-lg bg-[#1a6b3c] hover:bg-[#2d8f54] text-white text-sm cursor-pointer"
+                >
+                  Accepter
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

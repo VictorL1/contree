@@ -154,6 +154,8 @@ export interface ClientEvents {
   'create-room': (data: { targetScore: number }) => void;
   'join-room': (data: { roomCode: string; preferredPosition?: Position }) => void;
   'select-seat': (data: { position: Position }) => void;
+  'request-seat-swap': (data: { targetPosition: Position }) => void;
+  'respond-seat-swap': (data: { requesterPosition: Position; accepted: boolean }) => void;
   'player-ready': () => void;
   'place-bid': (data: { value: BidValue; suit: TrumpSuit }) => void;
   'pass': () => void;
@@ -184,5 +186,7 @@ export interface ServerEvents {
   'chat-message': (data: { username: string; message: string }) => void;
   'player-reconnected': (data: { position: Position }) => void;
   'player-disconnected': (data: { position: Position }) => void;
+  'seat-swap-request': (data: { fromPosition: Position; fromUsername: string }) => void;
+  'seat-swap-result': (data: { accepted: boolean; requesterPosition: Position; targetPosition: Position; reason?: string }) => void;
   'error': (data: { message: string }) => void;
 }
