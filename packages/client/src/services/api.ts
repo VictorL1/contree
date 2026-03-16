@@ -57,7 +57,7 @@ async function refreshTokens(): Promise<boolean> {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; username: string; email: string };
+  user: { id: string; username: string; email: string; isGuest?: boolean };
 }
 
 export const api = {
@@ -75,8 +75,19 @@ export const api = {
     });
   },
 
+  guestLogin() {
+    return request<AuthResponse>('/auth/guest', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
   getMe() {
-    return request<{ id: string; username: string; email: string }>('/auth/me');
+    return request<{ id: string; username: string; email: string; isGuest?: boolean }>('/auth/me');
+  },
+
+  getPublicRooms() {
+    return request<Array<{ code: string; name: string; players: number; targetScore: number; inProgress: boolean }>>('/rooms/public');
   },
 
   getLeaderboard() {

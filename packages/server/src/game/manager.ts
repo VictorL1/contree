@@ -1,23 +1,43 @@
 import { GameEngine } from './engine.js';
-import { Position } from '@contree/shared';
+import { GamePhase, Position } from '@contree/shared';
 
 interface Room {
   code: string;
+  name?: string;
+  isPublic: boolean;
   engine: GameEngine;
   playerSockets: Map<string, Position>; // socketId → Position
   positionToSocket: Map<Position, string>; // Position → socketId
   targetScore: number;
 }
 
+interface CreateRoomOptions {
+  targetScore?: number;
+  code?: string;
+  isPublic?: boolean;
+  name?: string;
+}
+
 class GameManager {
   private rooms = new Map<string, Room>();
 
+  constructor() {
+    this.ensurePublicRooms();
+  }
+
   /** Crée un nouveau salon avec un code unique */
-  createRoom(targetScore: number = 1000): Room {
-    const code = this.generateCode();
+  createRoom(optionsOrTargetScore: number | CreateRoomOptions = 1000): Room {
+    const options = typeof optionsOrTargetScore === 'number'
+      ? { targetScore: optionsOrTargetScore }
+      : optionsOrTargetScore;
+
+    const code = options.code?.toUpperCase() ?? this.generateCode();
+    const targetScore = options.targetScore ?? 1000;
     const engine = new GameEngine(code, targetScore);
     const room: Room = {
       code,
+      name: options.name,
+      isPublic: options.isPublic ?? false,
       engine,
       playerSockets: new Map(),
       positionToSocket: new Map(),
@@ -34,6 +54,21 @@ class GameManager {
 
   /** Supprime un salon */
   deleteRoom(code: string): void {
+    const room = this.rooms.get(code);
+    if (!room) return;
+
+    // Les salons publics sont persistants pour faciliter l'accès rapide
+    if (room.isPublic) {
+      const freshEngine = new GameEngine(code, room.targetScore);
+      this.rooms.set(code, {
+        ...room,
+        engine: freshEngine,
+        playerSockets: new Map(),
+        positionToSocket: new Map(),
+      });
+      return;
+    }
+
     this.rooms.delete(code);
   }
 
@@ -57,6 +92,25 @@ class GameManager {
     return true;
   }
 
+  movePlayerToPosition(room: Room, socketId: string, newPosition: Position): boolean {
+    const currentPosition = room.playerSockets.get(socketId);
+    if (!currentPosition) return false;
+    if (currentPosition === newPosition) return true;
+    if (room.positionToSocket.has(newPosition)) return false;
+
+    const player = room.engine.state.players.get(currentPosition);
+    if (!player) return false;
+
+    room.playerSockets.set(socketId, newPosition);
+    room.positionToSocket.delete(currentPosition);
+    room.positionToSocket.set(newPosition, socketId);
+
+    room.engine.state.players.delete(currentPosition);
+    player.position = newPosition;
+    room.engine.state.players.set(newPosition, player);
+    return true;
+  }
+
   /** Retire un joueur d'un salon */
   removePlayer(room: Room, socketId: string): Position | null {
     const position = room.playerSockets.get(socketId);
@@ -75,6 +129,33 @@ class GameManager {
       if (!room.positionToSocket.has(pos)) return pos;
     }
     return null;
+  }
+
+  listPublicRooms(): Array<{ code: string; name: string; players: number; targetScore: number; inProgress: boolean }> {
+    const rooms = Array.from(this.rooms.values())
+      .filter(room => room.isPublic)
+      .map(room => ({
+        code: room.code,
+        name: room.name ?? `Salon ${room.code}`,
+        players: room.engine.state.players.size,
+        targetScore: room.targetScore,
+        inProgress: room.engine.state.phase !== GamePhase.Waiting,
+      }));
+
+    return rooms;
+  }
+
+  private ensurePublicRooms(): void {
+    const predefined = [
+      { code: 'PUB001', name: 'Public 1', targetScore: 1000 },
+      { code: 'PUB002', name: 'Public 2', targetScore: 1000 },
+      { code: 'PUB003', name: 'Public 3', targetScore: 1000 },
+    ];
+
+    for (const r of predefined) {
+      if (this.rooms.has(r.code)) continue;
+      this.createRoom({ code: r.code, name: r.name, targetScore: r.targetScore, isPublic: true });
+    }
   }
 
   /** Génère un code de salon unique (6 caractères alphanumériques) */

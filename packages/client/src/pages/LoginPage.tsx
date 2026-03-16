@@ -1,14 +1,27 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
   const location = useLocation();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const access = params.get('oauth_access');
+    const refresh = params.get('oauth_refresh');
+    if (!access || !refresh) return;
+
+    sessionStorage.setItem('accessToken', access);
+    sessionStorage.setItem('refreshToken', refresh);
+    window.location.replace('/');
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -23,10 +36,22 @@ export function LoginPage() {
     }
   }
 
+  async function handleGuest() {
+    setError('');
+    setSubmitting(true);
+    try {
+      await loginAsGuest();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur de connexion invité');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#0a1f0d] to-[#0c0c0c]">
       <div className="w-full max-w-md p-8 rounded-2xl bg-[#1a1a2e] shadow-2xl border border-[#2a2a3e]">
-        <h1 className="text-3xl font-bold text-center mb-2 text-white">♠ Contrée</h1>
+        <h1 className="text-3xl font-bold text-center mb-2 text-white">♠ S'Contree</h1>
         <p className="text-center text-gray-400 mb-8">Connectez-vous pour jouer</p>
 
         {error && (
@@ -70,6 +95,24 @@ export function LoginPage() {
             {submitting ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
+
+        <div className="mt-4 space-y-2">
+          <button
+            type="button"
+            onClick={handleGuest}
+            disabled={submitting}
+            className="w-full py-3 rounded-lg bg-[#2a2a3e] hover:bg-[#3a3a4e] text-white font-medium transition disabled:opacity-50 cursor-pointer"
+          >
+            Jouer en invite
+          </button>
+          <button
+            type="button"
+            onClick={() => { window.location.href = `${API_URL}/auth/oauth/google/start`; }}
+            className="w-full py-3 rounded-lg border border-[#3a3a4e] text-white hover:bg-[#222236] transition cursor-pointer"
+          >
+            Continuer avec Google
+          </button>
+        </div>
 
         <p className="mt-6 text-center text-gray-400 text-sm">
           Pas de compte ?{' '}

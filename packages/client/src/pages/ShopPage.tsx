@@ -117,7 +117,7 @@ export function ShopPage() {
 
         {/* Points balance */}
         <div className="bg-[#1a1a2e] rounded-xl p-4 border border-[#2a2a3e] mb-6 flex items-center justify-between">
-          <span className="text-gray-400">Points de victoire disponibles</span>
+          <span className="text-gray-400">Jetons disponibles</span>
           <span className="text-[#d4a843] text-2xl font-bold">{myStats?.stats?.victoryPoints ?? 0}</span>
         </div>
 
@@ -164,7 +164,7 @@ export function ShopPage() {
                               : 'bg-[#2a2a3e] text-gray-600 cursor-not-allowed'
                           }`}
                         >
-                          {item.cost} PV
+                          {item.cost} Jetons
                         </button>
                       )}
                     </div>

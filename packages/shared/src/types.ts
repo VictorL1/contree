@@ -152,7 +152,8 @@ export interface GameState {
 /** Événements Socket.IO client → serveur */
 export interface ClientEvents {
   'create-room': (data: { targetScore: number }) => void;
-  'join-room': (data: { roomCode: string }) => void;
+  'join-room': (data: { roomCode: string; preferredPosition?: Position }) => void;
+  'select-seat': (data: { position: Position }) => void;
   'player-ready': () => void;
   'place-bid': (data: { value: BidValue; suit: TrumpSuit }) => void;
   'pass': () => void;
@@ -166,7 +167,7 @@ export interface ClientEvents {
 /** Événements Socket.IO serveur → client */
 export interface ServerEvents {
   'room-created': (data: { roomCode: string }) => void;
-  'room-joined': (data: { players: { position: Position; username: string }[] }) => void;
+  'room-joined': (data: { players: { position: Position; username: string }[]; yourPosition: Position | null }) => void;
   'player-joined': (data: { position: Position; username: string }) => void;
   'player-left': (data: { position: Position }) => void;
   'game-started': (data: { dealer: Position }) => void;

@@ -70,9 +70,8 @@ export function GamePage() {
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on('room-joined', ({ players: p }) => {
-      const myPlayer = p.find(pl => pl.username === user?.username);
-      if (myPlayer) setMyPosition(myPlayer.position);
+    socket.on('room-joined', ({ players: p, yourPosition }) => {
+      if (yourPosition) setMyPosition(yourPosition);
       setPlayers(p.map(pl => ({ ...pl, isConnected: true, cardCount: 8 })));
     });
 
@@ -180,7 +179,7 @@ export function GamePage() {
       socket.off('player-disconnected');
       socket.off('player-reconnected');
     };
-  }, [myPosition, user?.username, addAnnouncement]);
+  }, [myPosition, addAnnouncement]);
 
   function getPlayerName(pos: Position): string {
     return players.find(p => p.position === pos)?.username ?? pos;
@@ -368,7 +367,15 @@ export function GamePage() {
                 {gameOver.winner === myTeam ? 'Félicitations !' : 'Dommage, ce sera pour la prochaine !'}
               </p>
               {gameOver.winner === myTeam && (
-                <p className="text-[#d4a843] text-sm mb-4 font-medium">+10 points de victoire gagnés !</p>
+                <p className="text-[#d4a843] text-sm mb-4 font-medium">+10 Jetons gagnes !</p>
+              )}
+              {user?.isGuest && (
+                <div className="mb-4 p-3 rounded-lg bg-[#2a2a3e] border border-[#3a3a4e] text-left">
+                  <p className="text-yellow-300 text-sm font-semibold mb-1">Mode invite</p>
+                  <p className="text-gray-300 text-xs">
+                    En creant un compte, vous debloquez les Jetons, le classement, la boutique et le suivi de vos stats en duo.
+                  </p>
+                </div>
               )}
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div className="bg-[#0a0a1a] rounded-xl p-4">

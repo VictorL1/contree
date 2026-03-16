@@ -8,6 +8,7 @@ const REFRESH_TOKEN_EXPIRY = '7d';
 export interface TokenPayload {
   userId: string;
   username: string;
+  isGuest?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -27,7 +28,7 @@ export function generateTokens(payload: TokenPayload): { accessToken: string; re
 export function verifyAccessToken(token: string): TokenPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload & jwt.JwtPayload;
-    return { userId: decoded.userId, username: decoded.username };
+    return { userId: decoded.userId, username: decoded.username, isGuest: decoded.isGuest === true };
   } catch {
     return null;
   }

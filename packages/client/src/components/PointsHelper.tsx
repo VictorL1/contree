@@ -112,6 +112,7 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
   const [open, setOpen] = useState(false);
   const isLandscape = useIsLandscape();
   const isMobile = typeof window !== 'undefined' && 'ontouchstart' in window;
+  const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
 
   const trump = trumpSuit ?? Suit.Spades;
   const nonTrumpSuits = NON_TRUMP_SUITS_FOR[trump];
@@ -123,7 +124,7 @@ export function PointsHelper({ trumpSuit }: PointsHelperProps) {
     <>
       <div className="flex gap-1">
         {/* Fullscreen button (mobile only) */}
-        {isMobile && (
+        {isMobile && isAndroid && (
           <button
             onClick={toggleFullscreen}
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border text-sm cursor-pointer transition bg-[#1a1a2e] border-[#3a3a4e] text-gray-400 hover:text-white hover:border-[#2d8f54]"

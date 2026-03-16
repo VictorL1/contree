@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { authRouter } from './auth/routes.js';
 import { statsRouter } from './stats/routes.js';
+import { roomsRouter } from './rooms/routes.js';
 import { setupSocketHandlers } from './socket/handlers.js';
 import type { ClientEvents, ServerEvents } from '@contree/shared';
 
@@ -20,6 +21,7 @@ const io = new Server<ClientEvents, ServerEvents>(httpServer, {
 
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -31,6 +33,9 @@ app.use('/api/auth', authRouter);
 
 // Stats routes
 app.use('/api/stats', statsRouter);
+
+// Rooms routes
+app.use('/api/rooms', roomsRouter);
 
 // Socket.IO handlers
 setupSocketHandlers(io);

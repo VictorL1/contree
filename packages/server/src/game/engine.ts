@@ -72,6 +72,28 @@ export type GameEvent =
 export class GameEngine {
   public state: ServerGameState;
   private events: GameEvent[] = [];
+  private static seenDecks = new Map<string, number>();
+
+  private static logDeckDiagnostics(gameId: string, deck: Card[]): void {
+    // TEMP diagnostic to investigate reports of repeated decks.
+    const signature = deck.map((c) => `${c.suit}-${c.rank}`).join('|');
+    const seen = (GameEngine.seenDecks.get(signature) ?? 0) + 1;
+    GameEngine.seenDecks.set(signature, seen);
+
+    // Keep memory bounded for long-running processes.
+    if (GameEngine.seenDecks.size > 5000) {
+      const first = GameEngine.seenDecks.keys().next().value;
+      if (first) GameEngine.seenDecks.delete(first);
+    }
+
+    const preview = deck.slice(0, 8).map((c) => `${c.rank}${c.suit[0].toUpperCase()}`).join(' ');
+
+    if (seen > 1) {
+      console.warn(`[DECK-DIAG] Duplicate deck detected in room ${gameId}. Seen=${seen}. First8=${preview}`);
+    } else {
+      console.log(`[DECK-DIAG] New deck in room ${gameId}. First8=${preview}`);
+    }
+  }
 
   constructor(id: string, targetScore: number = DEFAULT_TARGET_SCORE) {
     this.state = {
@@ -138,6 +160,7 @@ export class GameEngine {
 
     // Mélanger et distribuer
     const deck = shuffleDeck(createDeck());
+    GameEngine.logDeckDiagnostics(this.state.id, deck);
     const hands = dealCards(deck);
     const positions = [Position.South, Position.West, Position.North, Position.East];
 
@@ -156,7 +179,7 @@ export class GameEngine {
     this.emit({ type: 'cards-dealt', hands: handsMap });
 
     // Lancer les enchères (le joueur après le donneur commence)
-    const firstBidder = nextPlayer(this.state.dealer);
+    const firstBidder = this.getNextActivePosition(this.state.dealer);
     this.state.bidding = createBiddingState(firstBidder);
     this.state.phase = GamePhase.Bidding;
     this.state.contract = null;
@@ -356,9 +379,18 @@ export class GameEngine {
     this.state.trickCount = 0;
 
     // Le joueur après le donneur commence
-    const firstPlayer = nextPlayer(this.state.dealer);
+    const firstPlayer = this.getNextActivePosition(this.state.dealer);
     this.state.currentPlayer = firstPlayer;
     this.emitYourTurn(firstPlayer);
+  }
+
+  private getNextActivePosition(from: Position): Position {
+    let cursor = from;
+    for (let i = 0; i < 4; i++) {
+      cursor = nextPlayer(cursor);
+      if (this.state.players.has(cursor)) return cursor;
+    }
+    return Position.South;
   }
 
   private scoreRound(): void {

@@ -1,6 +1,25 @@
 import { Suit, Rank, type Card } from './types.js';
 import { CARDS_PER_PLAYER, NUM_PLAYERS } from './constants.js';
 
+function randomInt(maxExclusive: number): number {
+  const cryptoObj = (globalThis as { crypto?: { getRandomValues?: (array: Uint32Array) => Uint32Array } }).crypto;
+
+  if (!cryptoObj?.getRandomValues) {
+    return Math.floor(Math.random() * maxExclusive);
+  }
+
+  // Rejection sampling to avoid modulo bias.
+  const maxUint32 = 0x100000000;
+  const limit = maxUint32 - (maxUint32 % maxExclusive);
+  const buffer = new Uint32Array(1);
+
+  while (true) {
+    cryptoObj.getRandomValues(buffer);
+    const value = buffer[0];
+    if (value < limit) return value % maxExclusive;
+  }
+}
+
 // ============================================================
 // Gestion du paquet de 32 cartes
 // ============================================================
@@ -23,7 +42,7 @@ export function createDeck(): Card[] {
 export function shuffleDeck(deck: Card[]): Card[] {
   const shuffled = [...deck];
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;

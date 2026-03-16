@@ -10,7 +10,14 @@ interface AuthenticatedSocket extends Socket<ClientEvents, ServerEvents> {
   data: {
     userId: string;
     username: string;
+    isGuest: boolean;
   };
+}
+
+const GUEST_EMAIL_DOMAIN = '@guest.scontree.local';
+
+function isGuestEmail(email: string): boolean {
+  return email.endsWith(GUEST_EMAIL_DOMAIN);
 }
 
 export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): void {
@@ -28,6 +35,7 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
 
     socket.data.userId = payload.userId;
     socket.data.username = payload.username;
+    socket.data.isGuest = payload.isGuest === true;
     next();
   });
 
@@ -42,7 +50,7 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
     });
 
     // ---- Rejoindre un salon ----
-    socket.on('join-room', ({ roomCode }) => {
+    socket.on('join-room', ({ roomCode, preferredPosition }) => {
       const room = gameManager.getRoom(roomCode.toUpperCase());
       if (!room) {
         socket.emit('error', { message: 'Salon introuvable' });
@@ -61,7 +69,7 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
           position: pos,
           username: p.username,
         }));
-        socket.emit('room-joined', { players });
+        socket.emit('room-joined', { players, yourPosition: room.playerSockets.get(socket.id) ?? null });
         return;
       }
 
@@ -89,11 +97,12 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
           position: pos,
           username: p.username,
         }));
-        socket.emit('room-joined', { players });
+        socket.emit('room-joined', { players, yourPosition: existingPosition });
         return;
       }
 
-      const position = gameManager.getNextFreePosition(room);
+      const preferred = preferredPosition && !room.positionToSocket.has(preferred) ? preferredPosition : null;
+      const position = preferred ?? gameManager.getNextFreePosition(room);
       if (!position) {
         socket.emit('error', { message: 'Le salon est plein' });
         return;
@@ -107,10 +116,35 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
         position: pos,
         username: p.username,
       }));
-      socket.emit('room-joined', { players });
+      socket.emit('room-joined', { players, yourPosition: position });
 
       // Informer les autres
       socket.to(room.code).emit('player-joined', { position, username: socket.data.username });
+    });
+
+    // ---- Changer de siège (phase lobby uniquement) ----
+    socket.on('select-seat', ({ position }) => {
+      const room = gameManager.getRoomBySocketId(socket.id);
+      if (!room) return;
+      if (room.engine.state.phase !== GamePhase.Waiting) {
+        socket.emit('error', { message: 'Impossible de changer de siège une fois la partie lancée' });
+        return;
+      }
+
+      const moved = gameManager.movePlayerToPosition(room, socket.id, position);
+      if (!moved) {
+        socket.emit('error', { message: 'Siège indisponible' });
+        return;
+      }
+
+      const players = Array.from(room.engine.state.players.entries()).map(([pos, p]) => ({
+        position: pos,
+        username: p.username,
+      }));
+
+      for (const [socketId, playerPos] of room.playerSockets.entries()) {
+        io.to(socketId).emit('room-joined', { players, yourPosition: playerPos });
+      }
     });
 
     // ---- Joueur prêt → démarrer si 4 joueurs ----
@@ -138,7 +172,7 @@ export function setupSocketHandlers(io: Server<ClientEvents, ServerEvents>): voi
         position: pos,
         username: p.username,
       }));
-      socket.emit('room-joined', { players });
+      socket.emit('room-joined', { players, yourPosition: position });
 
       // Renvoyer la main
       const hand = room.engine.getPlayerHand(position);
@@ -300,7 +334,7 @@ function handleReconnection(socket: AuthenticatedSocket, room: ReturnType<typeof
     position: pos,
     username: p.username,
   }));
-  socket.emit('room-joined', { players });
+  socket.emit('room-joined', { players, yourPosition: reconnectPosition });
   socket.emit('cards-dealt', { hand: room.engine.getPlayerHand(reconnectPosition) });
 
   if (room.engine.state.contract) {
@@ -429,6 +463,12 @@ async function saveGameResult(
   if (!room) return;
 
   const players = Array.from(room.engine.state.players.entries());
+  const userIds = players.map(([, p]) => p.userId);
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, email: true },
+  });
+  const guestByUserId = new Map(users.map(u => [u.id, isGuestEmail(u.email)]));
   const winningTeamNum = winner === Team.NorthSouth ? 1 : 2;
 
   // Create game history
@@ -454,6 +494,9 @@ async function saveGameResult(
     const team = getTeam(pos);
     const isWinner = team === winner;
     const teamScore = team === Team.NorthSouth ? scores[Team.NorthSouth] : scores[Team.EastWest];
+    const isGuest = guestByUserId.get(player.userId) === true;
+
+    if (isGuest) continue;
 
     await prisma.userStats.upsert({
       where: { userId: player.userId },
@@ -475,7 +518,7 @@ async function saveGameResult(
     // Update partner stats
     const partnerPos = getPartner(pos);
     const partnerData = room.engine.state.players.get(partnerPos);
-    if (partnerData) {
+    if (partnerData && guestByUserId.get(partnerData.userId) !== true) {
       await prisma.partnerStats.upsert({
         where: {
           userId_partnerId: { userId: player.userId, partnerId: partnerData.userId },

@@ -6,6 +6,7 @@ interface User {
   id: string;
   username: string;
   email: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextValue {
@@ -13,6 +14,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => void;
 }
 
@@ -53,6 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   }, []);
 
+  const loginAsGuest = useCallback(async () => {
+    const data = await api.guestLogin();
+    sessionStorage.setItem('accessToken', data.accessToken);
+    sessionStorage.setItem('refreshToken', data.refreshToken);
+    setUser({ ...data.user, isGuest: true });
+  }, []);
+
   const logout = useCallback(() => {
     disconnectSocket();
     sessionStorage.removeItem('accessToken');
@@ -61,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginAsGuest, logout }}>
       {children}
     </AuthContext.Provider>
   );

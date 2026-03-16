@@ -50,7 +50,7 @@ export function LeaderboardPage() {
             </div>
             <div className="text-right">
               <div className="text-[#d4a843] text-2xl font-bold">{myStats.stats.victoryPoints}</div>
-              <div className="text-gray-500 text-xs">points de victoire</div>
+              <div className="text-gray-500 text-xs">Jetons</div>
             </div>
           </div>
         )}
@@ -85,7 +85,7 @@ export function LeaderboardPage() {
             <div className="grid grid-cols-[3rem_1fr_5rem_5rem_5rem] gap-2 px-4 py-2 border-b border-[#2a2a3e] text-xs text-gray-500 uppercase tracking-wider">
               <span>#</span>
               <span>Joueur</span>
-              <span className="text-right">PV</span>
+              <span className="text-right">Jetons</span>
               <span className="text-right">V/D</span>
               <span className="text-right">Win%</span>
             </div>
@@ -122,7 +122,7 @@ export function LeaderboardPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard label="Parties jouées" value={myStats.stats?.gamesPlayed ?? 0} />
               <StatCard label="Victoires" value={myStats.stats?.gamesWon ?? 0} color="text-[#2d8f54]" />
-              <StatCard label="Points victoire" value={myStats.stats?.victoryPoints ?? 0} color="text-[#d4a843]" />
+              <StatCard label="Jetons" value={myStats.stats?.victoryPoints ?? 0} color="text-[#d4a843]" />
               <StatCard
                 label="Taux de victoire"
                 value={`${myStats.stats && myStats.stats.gamesPlayed > 0
