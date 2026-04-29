@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import { authRouter } from './auth/routes.js';
 import { statsRouter } from './stats/routes.js';
 import { roomsRouter } from './rooms/routes.js';
+import { sheetsRouter } from './sheets/routes.js';
 import { setupSocketHandlers } from './socket/handlers.js';
 import type { ClientEvents, ServerEvents } from '@contree/shared';
 
@@ -36,6 +37,9 @@ app.use('/api/stats', statsRouter);
 
 // Rooms routes
 app.use('/api/rooms', roomsRouter);
+
+// Score sheets (parties physiques)
+app.use('/api/sheets', sheetsRouter);
 
 // Socket.IO handlers
 setupSocketHandlers(io);

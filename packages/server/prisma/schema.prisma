@@ -18,10 +18,82 @@ model User {
   partnerStats    PartnerStats[]  @relation("PartnerStatsUser")
   partnerStatsOf  PartnerStats[]  @relation("PartnerStatsPartner")
   cosmetics       UserCosmetic[]
+  scoreSheets     ScoreSheet[]
+  scoreSheetShares ScoreSheetShare[]
   // Equipped cosmetics
   equippedBorder  String          @default("default")
   equippedTable   String          @default("default")
   equippedCardBack String         @default("default")
+}
+
+// ============================================================
+// Feuilles de score (parties physiques IRL)
+// ============================================================
+model ScoreSheet {
+  id            String            @id @default(cuid())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  ownerId       String
+  owner         User              @relation(fields: [ownerId], references: [id])
+  shareCode     String            @unique
+  name          String
+  targetScore   Int               @default(1000)
+  scoreMode     String            @default("points-faits") // "points-faits" | "points-annonces"
+  status        String            @default("in-progress")  // "in-progress" | "finished"
+  finishedAt    DateTime?
+  winningTeam   Int?              // 1 ou 2
+
+  // Joueurs (texte libre, lien optionnel vers comptes)
+  team1Player1Name String
+  team1Player2Name String
+  team2Player1Name String
+  team2Player2Name String
+  team1Player1UserId String?
+  team1Player2UserId String?
+  team2Player1UserId String?
+  team2Player2UserId String?
+
+  rounds        ScoreSheetRound[]
+  shares        ScoreSheetShare[]
+
+  @@index([ownerId])
+  @@index([shareCode])
+}
+
+model ScoreSheetRound {
+  id            String      @id @default(cuid())
+  sheetId       String
+  sheet         ScoreSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  index         Int
+  // Contrat
+  takerTeam     Int         // 1 ou 2
+  bidValue      Int         // 80..160 OU 250 (capot) OU 500 (générale)
+  bidType       String      @default("normal") // "normal" | "capot" | "generale"
+  trumpSuit     String      // "spades" | "hearts" | "diamonds" | "clubs"
+  contred       Boolean     @default(false)
+  surcontred    Boolean     @default(false)
+  // Résultat
+  team1Points   Int
+  team2Points   Int
+  beloteTeam    Int?        // 1, 2 ou null
+  contractMet   Boolean
+  notes         String?
+  createdAt     DateTime    @default(now())
+
+  @@unique([sheetId, index])
+  @@index([sheetId])
+}
+
+model ScoreSheetShare {
+  id        String     @id @default(cuid())
+  sheetId   String
+  sheet     ScoreSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  joinedAt  DateTime   @default(now())
+
+  @@unique([sheetId, userId])
+  @@index([userId])
 }
 
 model UserStats {

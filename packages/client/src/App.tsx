@@ -7,6 +7,10 @@ import { LobbyPage } from './pages/LobbyPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { LeaderboardPage } from './pages/LeaderboardPage.tsx';
 import { ShopPage } from './pages/ShopPage.tsx';
+import { SheetsListPage } from './pages/SheetsListPage.tsx';
+import { NewSheetPage } from './pages/NewSheetPage.tsx';
+import { SheetDetailPage } from './pages/SheetDetailPage.tsx';
+import { SheetJoinPage } from './pages/SheetJoinPage.tsx';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -33,6 +37,10 @@ export function App() {
       <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
       <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
+      <Route path="/sheets" element={<ProtectedRoute><SheetsListPage /></ProtectedRoute>} />
+      <Route path="/sheets/new" element={<ProtectedRoute><NewSheetPage /></ProtectedRoute>} />
+      <Route path="/sheets/join/:code" element={<ProtectedRoute><SheetJoinPage /></ProtectedRoute>} />
+      <Route path="/sheets/:id" element={<ProtectedRoute><SheetDetailPage /></ProtectedRoute>} />
       <Route path="/lobby/:roomCode" element={<ProtectedRoute><LobbyPage /></ProtectedRoute>} />
       <Route path="/game/:roomCode" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -137,6 +137,13 @@ export function HomePage() {
         >
           🛒 Boutique
         </Link>
+
+        <Link
+          to="/sheets"
+          className="block w-full py-3 rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a3e] text-gray-300 text-center font-medium border border-[#2a2a3e] transition"
+        >
+          📋 Feuilles de score (parties physiques)
+        </Link>
       </div>
     </div>
   );

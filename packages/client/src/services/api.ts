@@ -127,6 +127,40 @@ export const api = {
       body: JSON.stringify({ itemName, category }),
     });
   },
+
+  // ==========================================================
+  // Score sheets (parties physiques)
+  // ==========================================================
+  listSheets() {
+    return request<ScoreSheetSummary[]>('/sheets');
+  },
+  createSheet(payload: CreateSheetPayload) {
+    return request<{ id: string; shareCode: string; name: string }>('/sheets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  getSheet(id: string) {
+    return request<ScoreSheetDetail>(`/sheets/${id}`);
+  },
+  addRound(id: string, payload: AddRoundPayload) {
+    return request<{ round: ScoreSheetRound; status: string; winningTeam: number | null; finishedAt: string | null }>(
+      `/sheets/${id}/rounds`,
+      { method: 'POST', body: JSON.stringify(payload) },
+    );
+  },
+  deleteLastRound(id: string) {
+    return request<{ success: boolean }>(`/sheets/${id}/rounds/last`, { method: 'DELETE' });
+  },
+  finishSheet(id: string) {
+    return request<{ success: boolean }>(`/sheets/${id}/finish`, { method: 'POST' });
+  },
+  deleteSheet(id: string) {
+    return request<{ success: boolean }>(`/sheets/${id}`, { method: 'DELETE' });
+  },
+  joinSheet(shareCode: string) {
+    return request<{ id: string; name: string }>(`/sheets/join/${shareCode.toUpperCase()}`, { method: 'POST' });
+  },
 };
 
 export interface LeaderboardEntry {
@@ -166,4 +200,97 @@ export interface CosmeticItem {
   category: string;
   cost: number;
   preview: string;
+}
+
+// ============================================================
+// Score sheets
+// ============================================================
+export type ScoreMode = 'points-faits' | 'points-annonces';
+export type SheetStatus = 'in-progress' | 'finished';
+export type SheetTrumpSuit = 'spades' | 'hearts' | 'diamonds' | 'clubs';
+export type SheetBidType = 'normal' | 'capot' | 'generale';
+
+export interface ScoreSheetSummary {
+  id: string;
+  name: string;
+  shareCode: string;
+  createdAt: string;
+  updatedAt: string;
+  finishedAt: string | null;
+  status: SheetStatus;
+  winningTeam: number | null;
+  targetScore: number;
+  scoreMode: ScoreMode;
+  ownerUsername: string;
+  isOwner: boolean;
+  roundCount: number;
+  players: {
+    team1: [string, string];
+    team2: [string, string];
+  };
+}
+
+export interface ScoreSheetRound {
+  id: string;
+  sheetId: string;
+  index: number;
+  takerTeam: 1 | 2;
+  bidValue: number;
+  bidType: SheetBidType;
+  trumpSuit: SheetTrumpSuit;
+  contred: boolean;
+  surcontred: boolean;
+  team1Points: number;
+  team2Points: number;
+  beloteTeam: number | null;
+  contractMet: boolean;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface ScoreSheetDetail {
+  id: string;
+  name: string;
+  shareCode: string;
+  createdAt: string;
+  updatedAt: string;
+  finishedAt: string | null;
+  status: SheetStatus;
+  winningTeam: number | null;
+  targetScore: number;
+  scoreMode: ScoreMode;
+  isOwner: boolean;
+  ownerUsername: string;
+  players: {
+    team1: [string, string];
+    team2: [string, string];
+    team1UserIds: [string | null, string | null];
+    team2UserIds: [string | null, string | null];
+  };
+  rounds: ScoreSheetRound[];
+}
+
+export interface CreateSheetPayload {
+  team1Player1Name: string;
+  team1Player2Name: string;
+  team2Player1Name: string;
+  team2Player2Name: string;
+  targetScore: number;
+  scoreMode: ScoreMode;
+}
+
+export interface AddRoundPayload {
+  takerTeam: 1 | 2;
+  bidType: SheetBidType;
+  bidValue?: number;
+  trumpSuit: SheetTrumpSuit;
+  contred: boolean;
+  surcontred: boolean;
+  beloteTeam: 1 | 2 | null;
+  notes?: string | null;
+  // Mode points-faits :
+  takerTrickPoints?: number;
+  capotMade?: boolean;
+  // Mode points-annonces :
+  contractMet?: boolean;
 }
